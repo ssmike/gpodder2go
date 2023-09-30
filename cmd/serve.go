@@ -60,7 +60,7 @@ var serveCmd = &cobra.Command{
 		})
 
 		r.Group(func(r chi.Router) {
-			r.Use(m2.Verifier(verifierSecretKey, noAuth))
+			r.Use(m2.Verifier(dataInterface, verifierSecretKey, noAuth))
 			r.Post("/api/internal/users", userAPI.HandleUserCreate)
 
 			// device

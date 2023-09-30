@@ -7,9 +7,11 @@ import (
 	b64 "encoding/base64"
 	"log"
 	"net/http"
+
+	"github.com/oxtyped/gpodder2go/pkg/data"
 )
 
-func Verify(key string, noAuth bool) func(http.Handler) http.Handler {
+func Verify(db data.DataInterface, key string, noAuth bool) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		hfn := func(w http.ResponseWriter, r *http.Request) {
@@ -17,6 +19,16 @@ func Verify(key string, noAuth bool) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
+
+            username, password, ok := r.BasicAuth()
+            if ok {
+                if db.CheckUserPassword(username, password) {
+                    next.ServeHTTP(w, r)
+                } else {
+                    w.WriteHeader(401)
+                    return
+                }
+            }
 
 			ck, err := r.Cookie("sessionid")
 			if err != nil {
@@ -59,9 +71,9 @@ func Verify(key string, noAuth bool) func(http.Handler) http.Handler {
 	}
 }
 
-func Verifier(key string, noAuth bool) func(http.Handler) http.Handler {
+func Verifier(db data.DataInterface, key string, noAuth bool) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return Verify(key, noAuth)(next)
+		return Verify(db, key, noAuth)(next)
 	}
 }
 
